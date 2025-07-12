@@ -1,0 +1,237 @@
+# ==================================
+# WordPress + Vite Development Template
+# ==================================
+
+# =====================================
+# Build Outputs & Generated Files
+# =====================================
+# Vite build output (WordPress theme)
+dist/
+
+# Build artifacts
+*.map
+*.tsbuildinfo
+
+# Vite cache
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# =====================================
+# Package Managers & Dependencies
+# =====================================
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+.yarn/
+.npm/
+
+# =====================================
+# WordPress Environment (wp-env)
+# =====================================
+# WordPress core files (wp-env managed)
+.wp-env/
+wp-config.php
+wp-config-sample.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup-*
+wp-content/ai1wm-backups/
+
+# WordPress debug files
+debug.log
+wp-content/debug.log
+wp-content/themes/*/debug.log
+
+# WordPress maintenance
+.maintenance
+
+# =====================================
+# Database & SQL
+# =====================================
+# Auto-generated database exports
+sql/wpenv.sql
+sql/backup-*.sql
+sql/dump-*.sql
+
+# Keep sample/seed data
+!sql/sample-data.sql
+!sql/schema.sql
+
+# =====================================
+# Image Processing & Cache
+# =====================================
+# Sharp image processing cache
+.sharp-cache.json
+.sharp-cache/
+src/assets/images/.cache/
+dist/assets/images/.sharp-cache.json
+
+# Image optimization temporary files
+*.tmp
+src/assets/images/processed/
+src/assets/images/optimized/
+
+# =====================================
+# Build System & Timestamps
+# =====================================
+# Smart build system timestamp
+.last-image-build-time
+.last-image-process-time
+
+# =====================================
+# Development Tools & IDEs
+# =====================================
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Other editors
+.vim/
+.netrwhist
+*~
+.swp
+.swo
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =====================================
+# Environment & Configuration
+# =====================================
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Local configuration
+.local/
+local-config.php
+wp-config-local.php
+
+# =====================================
+# Operating System Files
+# =====================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =====================================
+# Logs & Debugging
+# =====================================
+# Application logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-error.log*
+lerna-debug.log*
+
+# Runtime logs
+.npm
+.eslintcache
+.stylelintcache
+
+# Coverage & Testing
+coverage/
+.nyc_output/
+.coverage/
+*.lcov
+
+# =====================================
+# Security & Sensitive Data
+# =====================================
+# API keys and secrets
+*.key
+*.pem
+*.p12
+.secrets/
+secrets.json
+
+# WordPress security
+wp-config-sample.php
+.htaccess
+.htpasswd
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# =====================================
+# Temporary & Cache Files
+# =====================================
+# General temporary files
+tmp/
+temp/
+.tmp/
+.cache/
+
+# Process files
+.pid
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+pids/
+lib-cov/
+
+
+
+
+
+# =====================================
+# Optional: Exclude common uploads
+# =====================================
+# Uncomment if you don't want to track uploads in development
+# uploads/
+# wp-content/uploads/
+
+# =====================================
+# Optional: Theme development ignores
+# =====================================
+# Uncomment for specific theme development needs
+# *.zip
+# *.tar.gz
+# /vendor/
+# composer.lock

@@ -1,0 +1,39 @@
+{
+  "name": "wp-vite-template",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:boot": "npm-run-all2 wp-env:start dev:wp",
+    "dev:wp": "NODE_ENV=development vite build --mode development --watch",
+    "build": "vite build",
+    "reset": "rm -rf dist && rm .last-image-process-time",
+    "dev:reboot": "npm-run-all2 reset wp-env:stop wp-env:start dev:wp",
+    "wp-env:start": "npx wp-env start",
+    "wp-env:stop": "npx wp-env stop",
+    "wp-export": "npx wp-env run cli wp db export sql/wpenv.sql",
+    "wp-import": "npx wp-env run cli wp db import sql/wpenv.sql"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@prettier/plugin-php": "^0.22.4",
+    "@tailwindcss/typography": "^0.5.16",
+    "@wordpress/env": "^10.7.0",
+    "@wordpress/prettier-config": "^4.8.0",
+    "daisyui": "^5.0.43",
+    "fast-glob": "^3.3.2",
+    "npm-run-all2": "^6.2.3",
+    "path": "^0.12.7",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "rollup-plugin-multi-input": "^1.5.0",
+    "sharp": "^0.33.5",
+    "svgo": "^3.3.2",
+    "vite": "^5.4.8"
+  },
+  "type": "module",
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.8",
+    "tailwindcss": "^4.1.8"
+  }
+}

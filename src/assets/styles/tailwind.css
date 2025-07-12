@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+  /* フォントスタック */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ブランドカラー - カスタマイズ可能 */
+  --color-primary: #2563eb;
+  --color-secondary: #7c3aed;
+  --color-accent: #06b6d4;
+  
+  /* セマンティックカラー */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #2563eb;
+
+  /* Z-Indexスケール */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal: 1050;
+  --z-index-header: 10000;
+}
+
+/* ベーススタイル */
+body {
+  @apply font-sans text-gray-900 antialiased;
+}

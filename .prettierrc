@@ -1,0 +1,26 @@
+{
+  "singleQuote": true,
+  "tabWidth": 2,
+  "extends": ["@wordpress/prettier-config"],
+  "plugins": ["@prettier/plugin-php", "prettier-plugin-tailwindcss"],
+  "overrides": [
+    {
+      "files": "*.php",
+      "options": {
+        "parser": "html"
+      }
+    },
+    {
+      "files": [
+        "./src/public/variables/*.php",
+        "./src/public/functions/*.php",
+        "functions.php",
+        "header.php",
+        "footer.php"
+      ],
+      "options": {
+        "parser": "php"
+      }
+    }
+  ]
+}
