@@ -152,38 +152,38 @@ export default function vitePluginSharp(options = {}) {
         const baseName = path.basename(file, ext);
         const baseDir = path.dirname(outputPath);
 
-        // @1x（元サイズ）の処理
+        // リサイズ計算
         const format = ext.slice(1);
         const compressOption = compressOptions[format] || {};
-        
-        if (format === 'jpg' || format === 'jpeg') {
-          await image.clone().jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        } else if (format === 'png') {
-          await image.clone().png(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        } else {
-          await image.clone().toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        }
-
-        // WebP変換
-        await image.clone().webp(webpOptions).toFile(path.join(baseDir, `${baseName}@1x.webp`));
-
-        // AVIF変換
-        await image.clone().avif(avifOptions).toFile(path.join(baseDir, `${baseName}@1x.avif`));
-
-        // @2x（半分サイズ）の処理
         const resizedWidth = Math.round(metadata.width * resizeOptions.widthRatio);
         const resizedHeight = Math.round(metadata.height * resizeOptions.heightRatio);
 
+        // @1x（縮小サイズ）の処理
         if (format === 'jpg' || format === 'jpeg') {
-          await image.clone().resize(resizedWidth, resizedHeight).jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+          await image.clone().resize(resizedWidth, resizedHeight).jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
         } else if (format === 'png') {
-          await image.clone().resize(resizedWidth, resizedHeight).png(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+          await image.clone().resize(resizedWidth, resizedHeight).png(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
         } else {
-          await image.clone().resize(resizedWidth, resizedHeight).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+          await image.clone().resize(resizedWidth, resizedHeight).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
         }
 
-        await image.clone().resize(resizedWidth, resizedHeight).webp(webpOptions).toFile(path.join(baseDir, `${baseName}@2x.webp`));
-        await image.clone().resize(resizedWidth, resizedHeight).avif(avifOptions).toFile(path.join(baseDir, `${baseName}@2x.avif`));
+        // WebP変換（縮小）
+        await image.clone().resize(resizedWidth, resizedHeight).webp(webpOptions).toFile(path.join(baseDir, `${baseName}@1x.webp`));
+
+        // AVIF変換（縮小）
+        await image.clone().resize(resizedWidth, resizedHeight).avif(avifOptions).toFile(path.join(baseDir, `${baseName}@1x.avif`));
+
+        // @2x（元サイズ）の処理
+        if (format === 'jpg' || format === 'jpeg') {
+          await image.clone().jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+        } else if (format === 'png') {
+          await image.clone().png(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+        } else {
+          await image.clone().toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+        }
+
+        await image.clone().webp(webpOptions).toFile(path.join(baseDir, `${baseName}@2x.webp`));
+        await image.clone().avif(avifOptions).toFile(path.join(baseDir, `${baseName}@2x.avif`));
       }
 
       // キャッシュを更新
