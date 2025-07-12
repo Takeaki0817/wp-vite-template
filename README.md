@@ -152,8 +152,8 @@ WordPress管理画面（外観 → メニュー）でメニューを作成:
 
 ### 自動処理
 - **サイズバリエーション**: 
-  - @1x: 元サイズ（オリジナル）
-  - @2x: 50%縮小サイズ（軽量版、注意：通常の@2x慣習とは逆）
+  - @1x: 50%縮小サイズ（軽量版、モバイル最適）
+  - @2x: 元サイズ（オリジナル、デスクトップ/Retina表示用）
 - **フォーマット別処理**:
   - 画像ファイル（JPG/PNG/GIF）: 元画像 + WebP + AVIF（各@1x/@2x）
   - SVGファイル: SVGO最適化のみ（サイズバリエーションなし）
@@ -214,10 +214,11 @@ WordPress管理画面（外観 → メニュー）でメニューを作成:
 
 ### ⚠️ 重要な注意事項
 
-#### @2xファイルについて
-- **@2xファイルは縮小版**: 一般的な@2x（2倍サイズ）とは逆で、パフォーマンス最適化のため50%縮小されています
-- **命名の理由**: 軽量版として@2xを使用（通常のRetina表示用@2xとは異なる）
-- **使用場面**: モバイルデバイスや軽量表示が必要な場合に適している
+#### @1x/@2xファイルについて
+- **@1xファイルは軽量版**: 50%縮小サイズでモバイルデバイスや通常表示に最適化
+- **@2xファイルは高品質版**: 元サイズでデスクトップやRetina表示に対応
+- **命名の理由**: web標準に近い形で@2xが高品質版として機能
+- **表示ロジック**: ブラウザが画面密度に応じて自動的に@1xまたは@2xを選択
 
 #### SVGファイルについて
 - **サイズバリエーションなし**: SVGファイルはSVGO最適化のみで、@1x/@2xサイズバリエーションは生成されません
@@ -226,11 +227,11 @@ WordPress管理画面（外観 → メニュー）でメニューを作成:
 
 #### パフォーマンス最適化の考え方
 ```html
-<!-- 推奨: モバイルファーストで軽量版から開始 -->
+<!-- 推奨: ブラウザが画面密度に応じて自動選択 -->
 <picture>
-  <source media="(max-width: 768px)" srcset="hero@2x.avif 1x, hero@1x.avif 2x" type="image/avif">
-  <source media="(max-width: 768px)" srcset="hero@2x.webp 1x, hero@1x.webp 2x" type="image/webp">
-  <img src="hero@2x.jpg" alt="ヒーロー画像">
+  <source media="(max-width: 768px)" srcset="hero@1x.avif 1x, hero@2x.avif 2x" type="image/avif">
+  <source media="(max-width: 768px)" srcset="hero@1x.webp 1x, hero@2x.webp 2x" type="image/webp">
+  <img src="hero@1x.jpg" alt="ヒーロー画像">
 </picture>
 ```
 
@@ -466,14 +467,14 @@ export default defineConfig({
 dist/
 ├── assets/
 │   ├── images/          # 複数フォーマット最適化画像
-│   │   ├── hero@1x.avif      # 元サイズAVIF（高圧縮）
-│   │   ├── hero@1x.webp      # 元サイズWebP
-│   │   ├── hero@1x.jpg       # 元サイズJPEG
-│   │   ├── hero@2x.avif      # 50%縮小AVIF（軽量版）
-│   │   ├── hero@2x.webp      # 50%縮小WebP（軽量版）
-│   │   ├── hero@2x.jpg       # 50%縮小JPEG（軽量版）
-│   │   ├── product@1x.png    # 元サイズPNG
-│   │   ├── product@2x.png    # 50%縮小PNG
+│   │   ├── hero@1x.avif      # 50%縮小AVIF（軽量版）
+│   │   ├── hero@1x.webp      # 50%縮小WebP（軽量版）
+│   │   ├── hero@1x.jpg       # 50%縮小JPEG（軽量版）
+│   │   ├── hero@2x.avif      # 元サイズAVIF（高品質版）
+│   │   ├── hero@2x.webp      # 元サイズWebP（高品質版）
+│   │   ├── hero@2x.jpg       # 元サイズJPEG（高品質版）
+│   │   ├── product@1x.png    # 50%縮小PNG（軽量版）
+│   │   ├── product@2x.png    # 元サイズPNG（高品質版）
 │   │   └── logo.svg          # SVG最適化のみ（サイズバリエーションなし）
 │   ├── scripts/         # 構造保持でコンパイルされたJS
 │   └── styles/          # コンパイルされたCSS
