@@ -21,9 +21,6 @@ vite.config.ts.timestamp-*
 # Package Managers & Dependencies
 # =====================================
 node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 .pnpm-store/
 .yarn/
 .npm/
@@ -135,8 +132,6 @@ ehthumbs.db
 Thumbs.db
 
 # Windows
-Thumbs.db
-ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 *.cab
@@ -146,7 +141,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Linux
-*~
 .fuse_hidden*
 .directory
 .Trash-*
@@ -187,7 +181,6 @@ coverage/
 secrets.json
 
 # WordPress security
-wp-config-sample.php
 .htaccess
 .htpasswd
 
@@ -216,8 +209,35 @@ temp/
 pids/
 lib-cov/
 
+# =====================================
+# Serena MCP (LSP Integration)
+# =====================================
+.serena/cache/
+.serena/logs/
 
+# =====================================
+# Claude Code
+# =====================================
+.claude/plans/
 
+# =====================================
+# Package Manager (Bun)
+# =====================================
+bun.lockb
+.bun/
+
+# =====================================
+# Modern Build Tools Cache
+# =====================================
+.turbo/
+.nx/
+.parcel-cache/
+
+# =====================================
+# Additional Security
+# =====================================
+*.pfx
+.credentials/
 
 
 # =====================================
