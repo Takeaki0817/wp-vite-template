@@ -212,8 +212,7 @@ lib-cov/
 # =====================================
 # Serena MCP (LSP Integration)
 # =====================================
-.serena/cache/
-.serena/logs/
+.serena/
 
 # =====================================
 # Claude Code
