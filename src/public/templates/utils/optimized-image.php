@@ -4,13 +4,41 @@
  * 
  * 画像名を渡すだけでRetina対応・次世代フォーマット対応の最適化された画像を出力
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 
 // 直接アクセスを防止
 if (!defined('ABSPATH')) {
     exit;
+}
+
+/**
+ * フォーマット検出結果をキャッシュ
+ *
+ * @param string $image_name 画像名（拡張子なし）
+ * @return string|null 検出されたフォーマット（'jpg', 'png'）またはnull
+ */
+function get_cached_image_format(string $image_name): ?string
+{
+    static $format_cache = [];
+    $base_path = get_template_directory() . '/assets/images/';
+    $cache_key = $image_name;
+
+    if (isset($format_cache[$cache_key])) {
+        return $format_cache[$cache_key];
+    }
+
+    // フォーマット検出ロジック
+    if (file_exists($base_path . $image_name . '@1x.jpg') || file_exists($base_path . $image_name . '@1x.jpeg')) {
+        $format_cache[$cache_key] = 'jpg';
+    } elseif (file_exists($base_path . $image_name . '@1x.png')) {
+        $format_cache[$cache_key] = 'png';
+    } else {
+        $format_cache[$cache_key] = null;
+    }
+
+    return $format_cache[$cache_key];
 }
 
 /**
@@ -30,6 +58,14 @@ if (!defined('ABSPATH')) {
  */
 function render_optimized_image(string $image_name, array $options = []): void
 {
+    // 画像存在チェック（デバッグモードでは警告コメントを出力）
+    if (!optimized_image_exists($image_name)) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            echo '<!-- 画像が見つかりません: ' . esc_html($image_name) . ' -->';
+        }
+        return;
+    }
+
     // デフォルトオプションの設定
     $defaults = [
         'alt' => '',
@@ -41,22 +77,16 @@ function render_optimized_image(string $image_name, array $options = []): void
         'fetchpriority' => null,
         'fallback_format' => null,
     ];
-    
+
     $options = array_merge($defaults, $options);
-    
+
     // 画像のベースURL
     $base_url = get_template_directory_uri() . '/assets/images/';
-    $base_path = get_template_directory() . '/assets/images/';
-    
-    // フォールバック形式の自動検出
+
+    // フォールバック形式の自動検出（キャッシュ関数を使用）
     if (empty($options['fallback_format'])) {
-        if (file_exists($base_path . $image_name . '@1x.jpg') || file_exists($base_path . $image_name . '@1x.jpeg')) {
-            $fallback_format = 'jpg';
-        } elseif (file_exists($base_path . $image_name . '@1x.png')) {
-            $fallback_format = 'png';
-        } else {
-            $fallback_format = 'png'; // デフォルト
-        }
+        $cached_format = get_cached_image_format($image_name);
+        $fallback_format = $cached_format ?? 'png'; // キャッシュがnullの場合はデフォルト
     } else {
         $fallback_format = $options['fallback_format'];
     }
@@ -170,16 +200,10 @@ function get_background_image_css_vars(string $image_name, string $format = 'web
 function get_responsive_background_css(string $image_name): string
 {
     $base_url = get_template_directory_uri() . '/assets/images/';
-    $base_path = get_template_directory() . '/assets/images/';
-    
-    // フォールバック形式の自動検出
-    if (file_exists($base_path . $image_name . '@1x.jpg') || file_exists($base_path . $image_name . '@1x.jpeg')) {
-        $fallback_format = 'jpg';
-    } elseif (file_exists($base_path . $image_name . '@1x.png')) {
-        $fallback_format = 'png';
-    } else {
-        $fallback_format = 'png'; // デフォルト
-    }
+
+    // フォールバック形式の自動検出（キャッシュ関数を使用）
+    $cached_format = get_cached_image_format($image_name);
+    $fallback_format = $cached_format ?? 'png'; // キャッシュがnullの場合はデフォルト
     
     $css = "
         background-image: url('{$base_url}{$image_name}@1x.{$fallback_format}');
@@ -212,13 +236,13 @@ function optimized_image_exists(string $image_name, string $format = null): bool
         return file_exists($base_path . $image_name . '@1x.' . $format);
     }
     
-    // いずれかの形式が存在するかチェック
-    $formats = ['png', 'jpg', 'jpeg'];
+    // いずれかの形式が存在するかチェック（avif, webpも含む）
+    $formats = ['avif', 'webp', 'png', 'jpg', 'jpeg'];
     foreach ($formats as $fmt) {
         if (file_exists($base_path . $image_name . '@1x.' . $fmt)) {
             return true;
         }
     }
-    
+
     return false;
 }

@@ -5,7 +5,7 @@
  * アートディレクション（異なるブレークポイントで異なる画像を表示）に対応した
  * 最適化画像コンポーネント
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 
@@ -43,6 +43,7 @@ if (!defined('ABSPATH')) {
  *   - loading: loading属性（デフォルト: 'lazy'）
  *   - fetchpriority: fetchpriority属性（デフォルト: null）
  *   - fallback_format: フォールバック画像形式（デフォルト: 自動検出）
+ *   - fallback_breakpoint: フォールバック画像に使用するブレークポイント（デフォルト: 'desktop'）
  * @return void
  */
 function render_art_direction_image(array $images, array $options = []): void
@@ -56,6 +57,7 @@ function render_art_direction_image(array $images, array $options = []): void
         'loading' => 'lazy',
         'fetchpriority' => null,
         'fallback_format' => null,
+        'fallback_breakpoint' => 'desktop',
     ];
     
     $options = array_merge($defaults, $options);
@@ -64,7 +66,25 @@ function render_art_direction_image(array $images, array $options = []): void
         echo '<!-- アートディレクション用の画像が提供されていません -->';
         return;
     }
-    
+
+    // ブレークポイントの正しい順序を定義（mobile → tablet → desktop）
+    $breakpoint_order = ['mobile', 'tablet', 'desktop'];
+
+    // 順序に従ってソート
+    $sorted_images = [];
+    foreach ($breakpoint_order as $bp) {
+        if (isset($images[$bp])) {
+            $sorted_images[$bp] = $images[$bp];
+        }
+    }
+    // 未定義のブレークポイントも追加
+    foreach ($images as $bp => $config) {
+        if (!isset($sorted_images[$bp])) {
+            $sorted_images[$bp] = $config;
+        }
+    }
+    $images = $sorted_images;
+
     // 画像のベースURL
     $base_url = get_template_directory_uri() . '/assets/images/';
     $base_path = get_template_directory() . '/assets/images/';
@@ -94,9 +114,13 @@ function render_art_direction_image(array $images, array $options = []): void
     
     $img_attributes = implode(' ', $attributes);
     
-    // フォールバック画像の特定（最後の画像を使用）
-    $fallback_image = end($images);
-    reset($images);
+    // フォールバック画像の特定
+    if (!empty($options['fallback_breakpoint']) && isset($images[$options['fallback_breakpoint']])) {
+        $fallback_image = $images[$options['fallback_breakpoint']];
+    } else {
+        $fallback_image = end($images);
+        reset($images);
+    }
     
     // フォールバック形式の自動検出
     if (empty($options['fallback_format'])) {
@@ -290,7 +314,7 @@ function art_direction_images_exist(array $images, string $format = null): bool
             }
         } else {
             // いずれかの形式が存在するかチェック
-            $formats = ['png', 'jpg', 'jpeg'];
+            $formats = ['avif', 'webp', 'png', 'jpg', 'jpeg'];
             $exists = false;
             foreach ($formats as $fmt) {
                 if (file_exists($base_path . $image_name . '@1x.' . $fmt)) {
