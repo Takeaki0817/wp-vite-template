@@ -65,8 +65,8 @@ foreach ($modules as $module) {
 
 // ナビゲーションメニューを登録
 register_nav_menus([
-  'primary' => __('Primary Navigation', 'text-domain'),
-  'footer' => __('Footer Navigation', 'text-domain'),
+  'primary' => __('Primary Navigation', 'wp-vite-theme'),
+  'footer' => __('Footer Navigation', 'wp-vite-theme'),
 ]);
 
 // テーマサポート

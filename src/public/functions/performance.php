@@ -2,7 +2,7 @@
 /**
  * パフォーマンス最適化（ミニマル）
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 

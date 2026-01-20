@@ -2,7 +2,7 @@
 /**
  * メディア・画像最適化（セーフモード）
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 

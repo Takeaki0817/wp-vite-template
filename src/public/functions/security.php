@@ -2,7 +2,7 @@
 /**
  * セキュリティ拡張（ミニマル）
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 
@@ -45,6 +45,7 @@ class ThemeSecurity
             header('X-Content-Type-Options: nosniff');
             header('X-XSS-Protection: 1; mode=block');
             header('Referrer-Policy: strict-origin-when-cross-origin');
+            header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
         }
     }
 
@@ -70,7 +71,7 @@ class ThemeSecurity
      */
     public static function generic_login_error(): string
     {
-        return 'ログインに失敗しました。ユーザー名またはパスワードが正しくありません。';
+        return esc_html__('ログインに失敗しました。ユーザー名またはパスワードが正しくありません。', 'wp-vite-theme');
     }
 
     /**
@@ -79,6 +80,7 @@ class ThemeSecurity
     public static function prevent_user_enumeration(): void
     {
         if (!is_user_logged_in() && isset($_GET['author'])) {
+            $author = sanitize_text_field(wp_unslash($_GET['author']));
             wp_redirect(home_url());
             exit;
         }

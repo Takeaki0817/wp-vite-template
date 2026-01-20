@@ -2,7 +2,7 @@
 /**
  * テーマのセットアップと設定（ミニマル）
  *
- * @package ThemeNameHere
+ * @package WpViteTheme
  * @since 1.0.0
  */
 
