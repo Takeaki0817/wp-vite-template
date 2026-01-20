@@ -218,6 +218,7 @@ lib-cov/
 # Claude Code
 # =====================================
 .claude/plans/
+.claude-settings.json
 
 # =====================================
 # Package Manager (Bun)
