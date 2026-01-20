@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 
 /**
@@ -15,8 +15,8 @@ export default function vitePluginPhpMinify(options = {}) {
   return {
     name: 'vite-plugin-php-minify',
     apply: 'build', // Only run during build, not dev
-    writeBundle() {
-      minifyPhpFiles(srcDir, outDir, {
+    async writeBundle() {
+      await minifyPhpFiles(srcDir, outDir, {
         preserveLineComments,
         preserveBlockComments,
       });
@@ -24,68 +24,91 @@ export default function vitePluginPhpMinify(options = {}) {
   };
 }
 
-function minifyPhpFiles(srcDir, outDir, options) {
-  const phpFiles = findPhpFiles(srcDir);
+async function minifyPhpFiles(srcDir, outDir, options) {
+  const phpFiles = await findPhpFiles(srcDir);
 
-  phpFiles.forEach((filePath) => {
-    const relativePath = path.relative(srcDir, filePath);
-    const outputPath = path.join(outDir, relativePath);
+  let totalOriginalSize = 0;
+  let totalMinifiedSize = 0;
+  let processedCount = 0;
 
-    // Read source file
-    const content = fs.readFileSync(filePath, 'utf-8');
+  await Promise.all(
+    phpFiles.map(async (filePath) => {
+      const relativePath = path.relative(srcDir, filePath);
+      const outputPath = path.join(outDir, relativePath);
 
-    // Minify PHP content
-    const minifiedContent = minifyPhp(content, options);
+      // Read source file
+      const content = await fs.readFile(filePath, 'utf-8');
+      const originalSize = Buffer.byteLength(content, 'utf-8');
 
-    // Ensure output directory exists
-    const outputDir = path.dirname(outputPath);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
+      // Minify PHP content
+      const minifiedContent = minifyPhp(content, options);
+      const minifiedSize = Buffer.byteLength(minifiedContent, 'utf-8');
 
-    // Write minified file
-    fs.writeFileSync(outputPath, minifiedContent, 'utf-8');
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      await fs.mkdir(outputDir, { recursive: true });
 
-    // console.log(`Minified PHP: ${relativePath}`);
-  });
+      // Write minified file
+      await fs.writeFile(outputPath, minifiedContent, 'utf-8');
+
+      totalOriginalSize += originalSize;
+      totalMinifiedSize += minifiedSize;
+      processedCount++;
+    })
+  );
+
+  // Log compression statistics
+  const savedBytes = totalOriginalSize - totalMinifiedSize;
+  const reductionPercent =
+    totalOriginalSize > 0
+      ? ((savedBytes / totalOriginalSize) * 100).toFixed(2)
+      : 0;
+
+  console.log('\n[vite-plugin-php-minify] Compression Statistics:');
+  console.log(`  Files processed: ${processedCount}`);
+  console.log(
+    `  Original size:   ${formatBytes(totalOriginalSize)}`
+  );
+  console.log(
+    `  Minified size:   ${formatBytes(totalMinifiedSize)}`
+  );
+  console.log(
+    `  Saved:           ${formatBytes(savedBytes)} (${reductionPercent}%)\n`
+  );
 }
 
-function findPhpFiles(dir) {
+async function findPhpFiles(dir) {
   const files = [];
 
-  function scanDir(currentDir) {
-    const items = fs.readdirSync(currentDir);
+  async function scanDir(currentDir) {
+    try {
+      await fs.access(currentDir);
+    } catch {
+      return;
+    }
 
-    items.forEach((item) => {
-      const itemPath = path.join(currentDir, item);
-      const stat = fs.statSync(itemPath);
+    const items = await fs.readdir(currentDir);
 
-      if (stat.isDirectory()) {
-        scanDir(itemPath);
-      } else if (item.endsWith('.php')) {
-        files.push(itemPath);
-      }
-    });
+    await Promise.all(
+      items.map(async (item) => {
+        const itemPath = path.join(currentDir, item);
+        const stat = await fs.stat(itemPath);
+
+        if (stat.isDirectory()) {
+          await scanDir(itemPath);
+        } else if (item.endsWith('.php')) {
+          files.push(itemPath);
+        }
+      })
+    );
   }
 
-  scanDir(dir);
+  await scanDir(dir);
   return files;
 }
 
 function minifyPhp(content, options) {
   let minified = content;
-
-  // Remove PHP line comments (// and #) but preserve URLs and important comments
-  // if (!options.preserveLineComments) {
-  //   minified = minified.replace(
-  //     /(?<!:)\/\/(?![^\r\n]*?(?:https?:|ftp:)).*$/gm,
-  //     '',
-  //   );
-  //   minified = minified.replace(
-  //     /(?<!:)#(?![^\r\n]*?(?:https?:|ftp:)).*$/gm,
-  //     '',
-  //   );
-  // }
 
   // Remove PHP block comments /* ... */ but preserve important ones
   if (!options.preserveBlockComments) {
@@ -105,4 +128,12 @@ function minifyPhp(content, options) {
   minified = minified.replace(/\s*\?>\s*/g, '?>');
 
   return minified;
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }

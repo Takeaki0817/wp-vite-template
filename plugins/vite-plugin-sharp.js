@@ -11,7 +11,7 @@ export default function vitePluginSharp(options = {}) {
     srcDir = 'src',
     outDir = 'dist',
     imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg'],
-    avifOptions = { quality: 50 },
+    avifOptions = { quality: 70 },
     webpOptions = { quality: 80 },
     compressOptions = {
       jpg: { quality: 80 },
@@ -27,14 +27,18 @@ export default function vitePluginSharp(options = {}) {
 
   const cacheFilePath = path.resolve(outDir, '.sharp-cache.json');
   const timestampFilePath = path.resolve('.last-image-process-time');
-  let imageCache = new Map();
   let lastProcessTime = 0;
   let isWatching = false;
 
   // ファイルのハッシュを計算
   async function getFileHash(filePath) {
-    const content = await fs.readFile(filePath);
-    return crypto.createHash('md5').update(content).digest('hex');
+    try {
+      const content = await fs.readFile(filePath);
+      return crypto.createHash('md5').update(content).digest('hex');
+    } catch (error) {
+      console.error(`[vite-plugin-sharp] Failed to read file for hash: ${filePath}`, error.message);
+      throw error;
+    }
   }
 
   // 画像ディレクトリの変更をチェック
@@ -45,7 +49,12 @@ export default function vitePluginSharp(options = {}) {
     // タイムスタンプファイルから最終処理時刻を読み込み
     try {
       const timestamp = await fs.readFile(timestampFilePath, 'utf-8');
-      lastProcessTime = parseInt(timestamp, 10);
+      const parsedTime = parseInt(timestamp, 10);
+      if (isNaN(parsedTime)) {
+        console.log('[vite-plugin-sharp] Invalid timestamp detected - processing all images');
+        return true;
+      }
+      lastProcessTime = parsedTime;
     } catch {
       // ファイルがない場合は初回実行
       console.log('[vite-plugin-sharp] First build detected - processing all images');
@@ -98,96 +107,120 @@ export default function vitePluginSharp(options = {}) {
       const outputPath = path.join(outDir, relativePath);
       const outputDir = path.dirname(outputPath);
 
-      // 出力ディレクトリを作成
-      await fs.mkdir(outputDir, { recursive: true });
+      try {
+        // 出力ディレクトリを作成
+        await fs.mkdir(outputDir, { recursive: true });
 
-      // ファイルハッシュを計算
-      const currentHash = await getFileHash(file);
-
-      // キャッシュと比較
-      if (cache[relativePath] === currentHash) {
-        // ファイルが存在するか確認
+        // ファイルハッシュを計算
+        let currentHash;
         try {
-          await fs.access(outputPath);
-          const ext = path.extname(file).toLowerCase();
-          if (ext !== '.svg') {
+          currentHash = await getFileHash(file);
+        } catch (hashError) {
+          console.error(`[vite-plugin-sharp] Failed to calculate hash for ${relativePath}:`, hashError.message);
+          continue;
+        }
+
+        // キャッシュと比較
+        if (cache[relativePath] === currentHash) {
+          // ファイルが存在するか確認
+          try {
+            await fs.access(outputPath);
+            const ext = path.extname(file).toLowerCase();
+            if (ext !== '.svg') {
+              const baseName = path.basename(file, ext);
+              const baseDir = path.dirname(outputPath);
+              // 生成ファイルの存在確認
+              await fs.access(path.join(baseDir, `${baseName}@1x.webp`));
+              await fs.access(path.join(baseDir, `${baseName}@1x.avif`));
+            }
+            continue; // スキップ
+          } catch {
+            // ファイルが存在しない場合は処理を続行
+          }
+        }
+
+        console.log(`[vite-plugin-sharp] Processing: ${relativePath}`);
+        const ext = path.extname(file).toLowerCase();
+
+        if (ext === '.svg') {
+          // SVG最適化
+          try {
+            const svgContent = await fs.readFile(file, 'utf-8');
+            const result = optimize(svgContent, {
+              path: file,
+              multipass: true,
+              plugins: [
+                {
+                  name: 'preset-default',
+                  params: {
+                    overrides: {
+                      removeViewBox: false,
+                      cleanupIds: false,
+                    },
+                  },
+                },
+              ],
+            });
+            await fs.writeFile(outputPath, result.data);
+          } catch (svgError) {
+            console.error(`[vite-plugin-sharp] SVG optimization failed for ${relativePath}:`, svgError.message);
+            continue;
+          }
+        } else {
+          // 画像処理（最適化版）
+          try {
+            const image = sharp(file);
+            const metadata = await image.metadata();
             const baseName = path.basename(file, ext);
             const baseDir = path.dirname(outputPath);
-            // 生成ファイルの存在確認
-            await fs.access(path.join(baseDir, `${baseName}@1x.webp`));
-            await fs.access(path.join(baseDir, `${baseName}@1x.avif`));
+
+            // リサイズ計算
+            const format = ext.slice(1);
+            const compressOption = compressOptions[format] || {};
+            const resizedWidth = Math.round(metadata.width * resizeOptions.widthRatio);
+            const resizedHeight = Math.round(metadata.height * resizeOptions.heightRatio);
+
+            // @1x用のリサイズ済みインスタンスを一度だけ作成
+            const resizedImage = image.clone().resize(resizedWidth, resizedHeight);
+
+            // @1x（縮小サイズ）の処理
+            if (format === 'jpg' || format === 'jpeg') {
+              await resizedImage.clone().jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
+            } else if (format === 'png') {
+              await resizedImage.clone().png(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
+            } else {
+              await resizedImage.clone().toFile(path.join(baseDir, `${baseName}@1x${ext}`));
+            }
+
+            // WebP変換（縮小）
+            await resizedImage.clone().webp(webpOptions).toFile(path.join(baseDir, `${baseName}@1x.webp`));
+
+            // AVIF変換（縮小）
+            await resizedImage.clone().avif(avifOptions).toFile(path.join(baseDir, `${baseName}@1x.avif`));
+
+            // @2x（元サイズ）の処理 - 元のimageインスタンスを使用
+            if (format === 'jpg' || format === 'jpeg') {
+              await image.clone().jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+            } else if (format === 'png') {
+              await image.clone().png(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+            } else {
+              await image.clone().toFile(path.join(baseDir, `${baseName}@2x${ext}`));
+            }
+
+            await image.clone().webp(webpOptions).toFile(path.join(baseDir, `${baseName}@2x.webp`));
+            await image.clone().avif(avifOptions).toFile(path.join(baseDir, `${baseName}@2x.avif`));
+          } catch (sharpError) {
+            console.error(`[vite-plugin-sharp] Image processing failed for ${relativePath}:`, sharpError.message);
+            continue;
           }
-          continue; // スキップ
-        } catch {
-          // ファイルが存在しない場合は処理を続行
         }
+
+        // キャッシュを更新
+        cache[relativePath] = currentHash;
+      } catch (error) {
+        console.error(`[vite-plugin-sharp] Unexpected error processing ${relativePath}:`, error.message);
+        continue;
       }
-
-      console.log(`[vite-plugin-sharp] Processing: ${relativePath}`);
-      const ext = path.extname(file).toLowerCase();
-
-      if (ext === '.svg') {
-        // SVG最適化
-        const svgContent = await fs.readFile(file, 'utf-8');
-        const result = optimize(svgContent, {
-          path: file,
-          multipass: true,
-          plugins: [
-            {
-              name: 'preset-default',
-              params: {
-                overrides: {
-                  removeViewBox: false,
-                  cleanupIds: false,
-                },
-              },
-            },
-          ],
-        });
-        await fs.writeFile(outputPath, result.data);
-      } else {
-        // 画像処理（既存のロジック）
-        const image = sharp(file);
-        const metadata = await image.metadata();
-        const baseName = path.basename(file, ext);
-        const baseDir = path.dirname(outputPath);
-
-        // リサイズ計算
-        const format = ext.slice(1);
-        const compressOption = compressOptions[format] || {};
-        const resizedWidth = Math.round(metadata.width * resizeOptions.widthRatio);
-        const resizedHeight = Math.round(metadata.height * resizeOptions.heightRatio);
-
-        // @1x（縮小サイズ）の処理
-        if (format === 'jpg' || format === 'jpeg') {
-          await image.clone().resize(resizedWidth, resizedHeight).jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        } else if (format === 'png') {
-          await image.clone().resize(resizedWidth, resizedHeight).png(compressOption).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        } else {
-          await image.clone().resize(resizedWidth, resizedHeight).toFile(path.join(baseDir, `${baseName}@1x${ext}`));
-        }
-
-        // WebP変換（縮小）
-        await image.clone().resize(resizedWidth, resizedHeight).webp(webpOptions).toFile(path.join(baseDir, `${baseName}@1x.webp`));
-
-        // AVIF変換（縮小）
-        await image.clone().resize(resizedWidth, resizedHeight).avif(avifOptions).toFile(path.join(baseDir, `${baseName}@1x.avif`));
-
-        // @2x（元サイズ）の処理
-        if (format === 'jpg' || format === 'jpeg') {
-          await image.clone().jpeg(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
-        } else if (format === 'png') {
-          await image.clone().png(compressOption).toFile(path.join(baseDir, `${baseName}@2x${ext}`));
-        } else {
-          await image.clone().toFile(path.join(baseDir, `${baseName}@2x${ext}`));
-        }
-
-        await image.clone().webp(webpOptions).toFile(path.join(baseDir, `${baseName}@2x.webp`));
-        await image.clone().avif(avifOptions).toFile(path.join(baseDir, `${baseName}@2x.avif`));
-      }
-
-      // キャッシュを更新
-      cache[relativePath] = currentHash;
     }
 
     // キャッシュファイルを保存
