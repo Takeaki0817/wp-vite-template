@@ -72,56 +72,41 @@ render_optimized_image('hero-image', ['alt' => '説明', 'loading' => 'eager']);
 
 ---
 
+## 利用可能なスキル
+
+### WordPress専用スキル（プロジェクトローカル）
+
+| スキル | 用途 |
+|--------|------|
+| **wordpress-router** | WordPressコードベースのルーティング・調査起点 |
+| **wp-block-development** | Gutenbergブロック開発（block.json, register_block_type） |
+| **wp-block-themes** | ブロックテーマ開発・theme.json設定 |
+| **wp-plugin-development** | プラグイン設計・アクティベーション・フック |
+| **wp-rest-api** | REST APIエンドポイント構築・拡張 |
+| **wp-interactivity-api** | Interactivity API（data-wp-*ディレクティブ） |
+| **wp-abilities-api** | WordPress Abilities API |
+| **wp-performance** | パフォーマンス最適化（バックエンド） |
+| **wp-phpstan** | PHPStan静的解析設定・実行 |
+| **wp-wpcli-and-ops** | WP-CLI操作・search-replace・移行 |
+| **wp-env** | @wordpress/env ローカル環境管理（グローバル） |
+| **wp-playground** | WordPress Playgroundによる検証 |
+| **wp-project-triage** | WordPressリポジトリの俯瞰調査 |
+| **wpds** | WordPress Design Systemコンポーネント |
+| **blueprint** | Playground Blueprint JSON作成 |
+| **wcag-audit-patterns** | WCAG 2.2アクセシビリティ監査 |
+| **tailwind-css** | TailwindCSS v4ユーティリティ |
+| **find-docs** | ライブラリ最新ドキュメント取得（Context7） |
+
 ## MCP サーバー
 
 | サーバー | 用途 |
 |----------|------|
 | **figma-remote-mcp** | Figmaデザインシステム連携（デザイン取得、Code Connect） |
-| **serena** | LSPベースのシンボルナビゲーション、リファクタリング |
 
-## 利用可能なSkills
+## サブエージェント活用
 
-### デザイン・スタイリング
-| Skill | 用途 |
-|-------|------|
-| `figma-to-tailwind` | Figma MCPで取得したデザイン変数をTailwind CSSクラスに変換 |
-| `create-design-system-rules` | プロジェクト固有のデザインシステムルール生成 |
-
-### コード品質
-| Skill | 用途 |
-|-------|------|
-| `accessibility-auditor` | WCAG準拠チェック、ARIA実装、インクルーシブデザイン |
-| `wcag-audit-patterns` | WCAG 2.2アクセシビリティ監査（自動テスト + 手動検証） |
-| `seo-review` | SEO最適化監査、検索可視性向上 |
-| `serena` | シンボルレベルのコード理解とナビゲーション（LSP） |
-
-### ワークフロー最適化
-| Skill | 用途 |
-|-------|------|
-| `context-compression` | コンテキスト圧縮、長時間セッション最適化 |
-| `worktree-agents` | 並列実装オーケストレーション（git worktree使用） |
-| `skill-creator` | 新規スキル作成ガイド |
-
-## Subagent推奨
-
-| Agent | 用途 |
-|-------|------|
-| **Explore** | 大規模コードベースのナビゲーション、ファイル検索 |
-| **Plan** | マルチファイル機能の実装計画立案 |
-| **Bash** | Git操作、ビルド/テストコマンド実行 |
-
-## 推奨ワークフロー
-
-### Figma→実装フロー
-1. `figma-remote-mcp` でデザインコンテキスト取得
-2. `figma-to-tailwind` でTailwindクラスに変換
-3. 実装後に `accessibility-auditor` でアクセシビリティチェック
-
-### 複雑な機能実装
-1. `Plan` agent で実装計画策定
-2. `worktree-agents` で並列処理（複数タスク時）
-3. `serena` でシンボルレベルのリファクタリング
-
-### コード調査
-- `Explore` agent で未知のコードベース探索
-- `serena` skill でシンボル参照・定義検索
+| タスク | 推奨エージェント |
+|--------|-----------------|
+| コードベース探索・パターン検索 | Explore |
+| 複数ファイルにまたがる実装計画 | Plan |
+| 複雑なワークフロー・調査 | general-purpose |
