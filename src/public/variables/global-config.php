@@ -1,7 +1,7 @@
 <?php
 /**
  * グローバルサイト設定
- * 
+ *
  * プロジェクトに合わせてこれらの値をカスタマイズしてください
  */
 
@@ -20,14 +20,14 @@ $site_config = [
       'sunday' => 'Closed',
     ],
   ],
-  
+
   'social' => [
     'twitter' => 'https://twitter.com/yourcompany',
     'facebook' => 'https://facebook.com/yourcompany',
     'instagram' => 'https://instagram.com/yourcompany',
     'linkedin' => 'https://linkedin.com/company/yourcompany',
   ],
-  
+
   'features' => [
     'show_social_links' => true,
     'show_business_hours' => true,

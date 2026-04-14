@@ -27,7 +27,6 @@ get_header();
 
   <div class="mt-15 text-center md:mt-30">
     <!-- uibutton -->
-    <!-- prettier-ignore -->
     <a href="<?php echo home_url('/news'); ?>" class="inline-block">
       <?php get_template_part('templates/ui-button', null, [
         'button_text' => 'お知らせ一覧に戻る',
@@ -37,4 +36,5 @@ get_header();
   </div>
 </div>
 
-<?php get_template_part('templates/cta'); get_footer(); ?>
+<?php get_template_part('templates/cta');
+get_footer(); ?>
