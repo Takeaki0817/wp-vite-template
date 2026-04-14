@@ -14,7 +14,7 @@ export default defineConfig({
     emptyOutDir: false,
     copyPublicDir: true,
     assetsDir: '',
-    minify: 'esbuild',
+    minify: true,
     manifest: true,
     watch:
       process.env.NODE_ENV === 'development'
@@ -65,8 +65,6 @@ export default defineConfig({
       preserveLineComments: false,
       preserveBlockComments: false,
     }),
-    tailwindcss({
-      content: ['./src/public/**/*.php', './src/public/**/*.html'],
-    }),
+    tailwindcss(),
   ],
 });
