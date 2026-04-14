@@ -47,3 +47,19 @@ Functions are loaded in order from `src/public/functions/`:
 - Prevent direct file access: `if (!defined('ABSPATH')) exit;`
 - Use `wp_enqueue_script()` / `wp_enqueue_style()` for assets
 - Never trust user input without validation
+
+## PHP圧縮（vite-plugin-php-minify）
+
+本番ビルド時の `vite-plugin-php-minify` は文字列リテラルを保護してからコメント・空白を削除する。
+
+- `'...'`（シングルクォート）、`"..."`（ダブルクォート）、ヒアドキュメント（`<<<EOT`）を一時退避
+- コメント（`//`、`/* */`、`#`）と余分な空白・改行を除去
+- 退避した文字列リテラルを元の位置に復元
+
+これにより、文字列内のスペースや改行が誤って削除されることはない。
+
+## コード整形（Prettier）
+
+- PHP/HTML混在テンプレートの整形には `plugins/prettier-plugin-wp-php.mjs` カスタムプラグインを使用する
+- `<!-- prettier-ignore -->` は使用しない（プラグインが対応済みのため不要）
+- 整形コマンド: `npm run format`（実行）/ `npm run format:check`（確認のみ）

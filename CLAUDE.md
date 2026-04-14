@@ -10,6 +10,8 @@ npm run dev:wp        # WordPress + Vite監視モード
 npm run build         # 本番ビルド
 npm run reset         # キャッシュクリア
 npm run dev:reboot    # 完全リセット後に開発再開
+npm run format        # PHPテンプレート整形
+npm run format:check  # 整形チェック（CI用）
 ```
 
 **アクセス**: http://localhost:8888 | 管理画面: /wp-admin (admin/password)
@@ -21,18 +23,23 @@ src/
 ├── assets/
 │   ├── images/       → 自動最適化（AVIF/WebP/@1x/@2x生成）
 │   ├── scripts/      → common.js + pages/*.js（テンプレート自動マッチ）
-│   └── styles/       → tailwind.css（CSS-first設定）
+│   └── styles/       → tailwind.css（CSS-first + @utility）+ add-style.css（WP管理画面上書き専用）
 └── public/
-    ├── functions/    → theme-setup, security, performance
-    ├── templates/    → WordPress テンプレート
+    ├── functions/    → theme-setup, security, performance, media-optimization
+    ├── templates/    → WordPress テンプレート + パーシャル（ui-button, cta, page-header, news-item）
     └── variables/    → global-config.php（$site_config）
+scripts/
+└── format-wp.mjs     → PHPテンプレート整形スクリプト
+plugins/
+└── prettier-plugin-wp-php.mjs  → PHP/HTML混在ファイル対応Prettierカスタムプラグイン
+.github/workflows/    → deploy.yml（手動FTPデプロイ）
 ```
 
 ## ビルドシステム
 
-- **Vite**: マルチ入力ビルド、ハッシュなしファイル名維持
+- **Vite 8（Rolldown）**: Rust製バンドラーで10〜30倍高速、マルチ入力ビルド、ハッシュなしファイル名維持
 - **vite-plugin-sharp**: 画像最適化（AVIF/WebP/@1x/@2x）+ キャッシュ
-- **vite-plugin-php-minify**: 本番PHP圧縮
+- **vite-plugin-php-minify**: 本番PHP圧縮（文字列リテラル保護付き — `'...'` / `"..."` / ヒアドキュメントを退避してからコメント・空白削除）
 - **TailwindCSS v4**: `@theme`ブロックでカスタマイズ
 
 ## 主要パターン
@@ -61,6 +68,42 @@ render_optimized_image('hero-image', ['alt' => '説明', 'loading' => 'eager']);
 - `styles.md` - TailwindCSS設定
 - `images.md` - 画像最適化詳細
 
+## コード整形
+
+Prettier + カスタムプラグイン（`plugins/prettier-plugin-wp-php.mjs`）でPHP/HTML混在ファイルを安全に整形する。
+
+- PHP テンプレートの `<?php ?>` タグを含む複雑な構造も崩さずに整形
+- VSCode Format on Save に対応（Prettier 拡張のみ必要、追加設定不要）
+- `<!-- prettier-ignore -->` は不要（プラグインが自動的に対応）
+- 整形対象: `src/public/templates/**/*.php`
+
+```bash
+npm run format        # 整形実行
+npm run format:check  # 整形チェックのみ（CI/差分確認用）
+```
+
+## デプロイ（GitHub Actions FTP）
+
+`.github/workflows/deploy.yml` — `workflow_dispatch`（手動）トリガー
+
+```bash
+# 自動デプロイに変更する場合: deploy.yml の on: を以下に書き換える
+on:
+  push:
+    branches:
+      - main
+```
+
+**GitHub Secrets 設定** (Settings → Secrets and variables → Actions):
+
+| Secret | 説明 |
+|--------|------|
+| `FTP_HOST` | FTPサーバーホスト |
+| `FTP_USERNAME` | FTPユーザー名 |
+| `FTP_PASSWORD` | FTPパスワード |
+| `FTP_PORT` | FTPポート（デフォルト21） |
+| `FTP_SERVER_DIR` | アップロード先パス（例: `public_html/wp-content/themes/my-theme/`） |
+
 ## トラブルシューティング
 
 | 問題 | 解決策 |
@@ -69,6 +112,7 @@ render_optimized_image('hero-image', ['alt' => '説明', 'loading' => 'eager']);
 | スクリプト未読込 | ファイル名とテンプレート名の一致確認 |
 | ビルドエラー | `npm install` 再実行 |
 | Docker問題 | `npm run wp-env:stop && npm run wp-env:start` |
+| 整形で崩れる | `npm run format` で再整形、`npm run format:check` でCI確認 |
 
 ---
 
