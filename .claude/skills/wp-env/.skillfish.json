@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "wp-env",
+  "owner": "emdashcodes",
+  "repo": "wp-ability-toolkit",
+  "path": "claude-code-plugins/wp-env/skills/wp-env",
+  "branch": "trunk",
+  "sha": "3c96d3413460edca8554401f4d76eff21e86cd47",
+  "source": "manual"
+}
