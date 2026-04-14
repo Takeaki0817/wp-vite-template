@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 /**
- * Vite plugin to minify PHP files by removing comments and unnecessary whitespace
+ * PHP ファイルからコメント・不要な空白を除去する Vite プラグイン
  */
 export default function vitePluginPhpMinify(options = {}) {
   const {
@@ -14,7 +14,7 @@ export default function vitePluginPhpMinify(options = {}) {
 
   return {
     name: 'vite-plugin-php-minify',
-    apply: 'build', // Only run during build, not dev
+    apply: 'build', // 本番ビルド時のみ実行
     async writeBundle() {
       await minifyPhpFiles(srcDir, outDir, {
         preserveLineComments,
@@ -36,19 +36,19 @@ async function minifyPhpFiles(srcDir, outDir, options) {
       const relativePath = path.relative(srcDir, filePath);
       const outputPath = path.join(outDir, relativePath);
 
-      // Read source file
+      // ソースファイルを読み込み
       const content = await fs.readFile(filePath, 'utf-8');
       const originalSize = Buffer.byteLength(content, 'utf-8');
 
-      // Minify PHP content
+      // PHP を圧縮
       const minifiedContent = minifyPhp(content, options);
       const minifiedSize = Buffer.byteLength(minifiedContent, 'utf-8');
 
-      // Ensure output directory exists
+      // 出力先ディレクトリを作成
       const outputDir = path.dirname(outputPath);
       await fs.mkdir(outputDir, { recursive: true });
 
-      // Write minified file
+      // 圧縮済みファイルを書き出し
       await fs.writeFile(outputPath, minifiedContent, 'utf-8');
 
       totalOriginalSize += originalSize;
@@ -57,7 +57,7 @@ async function minifyPhpFiles(srcDir, outDir, options) {
     })
   );
 
-  // Log compression statistics
+  // 圧縮統計をログ出力
   const savedBytes = totalOriginalSize - totalMinifiedSize;
   const reductionPercent =
     totalOriginalSize > 0
@@ -77,6 +77,9 @@ async function minifyPhpFiles(srcDir, outDir, options) {
   );
 }
 
+/**
+ * 指定ディレクトリ以下の .php ファイルを再帰的に検索
+ */
 async function findPhpFiles(dir) {
   const files = [];
 
@@ -107,29 +110,49 @@ async function findPhpFiles(dir) {
   return files;
 }
 
+/**
+ * PHP ソースを圧縮する
+ *
+ * 処理手順:
+ * 1. 文字列リテラルをプレースホルダに退避（誤削除を防止）
+ * 2. コメント・空白を削除
+ * 3. 文字列リテラルを復元
+ */
 function minifyPhp(content, options) {
-  let minified = content;
+  // 文字列リテラル（'...' / "..." / ヒアドキュメント / Nowdoc）を
+  // プレースホルダに退避し、コメント・空白削除の誤マッチを防ぐ
+  const strings = [];
+  let safed = content.replace(
+    /<<<['"]?(\w+)['"]?\r?\n[\s\S]*?\r?\n\s*\1;|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
+    (match) => {
+      strings.push(match);
+      return `\x00STR${strings.length - 1}\x00`;
+    }
+  );
 
-  // Remove PHP block comments /* ... */ but preserve important ones
+  // PHP ブロックコメント削除（/*! で始まる重要コメントは保持）
   if (!options.preserveBlockComments) {
-    minified = minified.replace(/\/\*(?!\*!)([\s\S]*?)\*\//g, '');
+    safed = safed.replace(/\/\*(?!\*!)([\s\S]*?)\*\//g, '');
   }
 
-  // Remove HTML comments <!-- ... --> but preserve conditional comments
-  minified = minified.replace(/<!--(?!\[if|\s*\[endif)[\s\S]*?-->/g, '');
+  // HTML コメント削除（IE 条件付きコメントは保持）
+  safed = safed.replace(/<!--(?!\[if|\s*\[endif)[\s\S]*?-->/g, '');
 
-  // Remove excessive whitespace but preserve necessary spacing
-  minified = minified.replace(/\n\s*\n/g, '\n'); // Remove empty lines
-  minified = minified.replace(/^\s+/gm, ''); // Remove leading whitespace
-  minified = minified.replace(/\s+$/gm, ''); // Remove trailing whitespace
+  // 空行を削除
+  safed = safed.replace(/\n\s*\n/g, '\n');
 
-  // Preserve necessary spacing around PHP tags and operators
-  minified = minified.replace(/\s*<\?php\s*/g, '<?php ');
-  minified = minified.replace(/\s*\?>\s*/g, '?>');
+  // 行末の空白を削除（行頭空白は複数行文字列やインデントを壊すため削除しない）
+  safed = safed.replace(/\s+$/gm, '');
 
-  return minified;
+  // 文字列リテラルを復元
+  safed = safed.replace(/\x00STR(\d+)\x00/g, (_, i) => strings[parseInt(i)]);
+
+  return safed;
 }
 
+/**
+ * バイト数を人間が読みやすい形式に変換
+ */
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
   const k = 1024;

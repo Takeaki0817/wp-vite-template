@@ -5,7 +5,7 @@
 
   /**
    * ビューポート縮小制御
-   * 360px未満の画面幅では、360pxのレイアウトを縮小表示
+   * 440px未満の画面幅では、440pxのレイアウトを縮小表示
    */
   const viewportScaleControl = () => {
     const MIN_WIDTH = 440;
@@ -22,11 +22,11 @@
       const screenWidth = window.screen.width || window.innerWidth;
 
       if (screenWidth < MIN_WIDTH) {
-        // 360px未満の場合、縮小率を計算
+        // 440px未満の場合、縮小率を計算
         const scale = screenWidth / MIN_WIDTH;
         metaViewport.content = `width=${MIN_WIDTH}, initial-scale=${scale}, minimum-scale=${scale}, maximum-scale=${scale}, user-scalable=no`;
       } else {
-        // 360px以上の場合、通常のレスポンシブ表示
+        // 440px以上の場合、通常のレスポンシブ表示
         metaViewport.content =
           'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5';
       }

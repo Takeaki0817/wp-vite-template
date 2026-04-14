@@ -62,14 +62,3 @@ foreach ($modules as $module) {
     require_once $module_path;
   }
 }
-
-// ナビゲーションメニューを登録
-register_nav_menus([
-  'primary' => __('Primary Navigation', 'wp-vite-theme'),
-  'footer' => __('Footer Navigation', 'wp-vite-theme'),
-]);
-
-// テーマサポート
-add_theme_support('post-thumbnails');
-add_theme_support('title-tag');
-add_theme_support('html5', ['search-form', 'comment-form', 'comment-list', 'gallery', 'caption']);

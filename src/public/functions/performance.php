@@ -26,13 +26,13 @@ class ThemePerformance
       'style_loader_src',
       [self::class, 'remove_version_strings'],
       10,
-      1
+      1,
     );
     add_filter(
       'script_loader_src',
       [self::class, 'remove_version_strings'],
       10,
-      1
+      1,
     );
 
     // キャッシュヘッダー設定
@@ -64,9 +64,19 @@ class ThemePerformance
    */
   public static function set_cache_headers(): void
   {
-    if (!is_admin() && !headers_sent()) {
-      // 静的ファイルのキャッシュを設定
-      header('Cache-Control: public, max-age=31536000'); // 1年
+    if (is_admin()) {
+      return;
+    }
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (
+      preg_match(
+        '/\.(css|js|jpg|jpeg|png|webp|avif|gif|svg|woff2?|ttf|ico)(\?.*)?$/',
+        $uri,
+      )
+    ) {
+      header('Cache-Control: public, max-age=31536000, immutable');
+    } else {
+      header('Cache-Control: no-cache, must-revalidate');
     }
   }
 

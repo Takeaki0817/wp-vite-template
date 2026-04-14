@@ -8,7 +8,7 @@
 
 // 直接アクセスを防止
 if (!defined('ABSPATH')) {
-    exit;
+  exit();
 }
 
 /**
@@ -16,75 +16,84 @@ if (!defined('ABSPATH')) {
  */
 class ThemeSecurity
 {
-    /**
-     * 基本的なセキュリティ機能を初期化
-     */
-    public static function init(): void
-    {
-        // セキュリティヘッダー
-        add_action('send_headers', [self::class, 'send_security_headers']);
-        
-        // 基本的なWordPress機能の無効化
-        add_filter('xmlrpc_enabled', '__return_false');
-        add_filter('map_meta_cap', [self::class, 'disable_file_editor'], 10, 2);
-        
-        // ログインページ保護
-        add_filter('login_errors', [self::class, 'generic_login_error']);
-        
-        // ユーザー列挙攻撃の基本防止
-        add_action('wp', [self::class, 'prevent_user_enumeration']);
-    }
+  /**
+   * 基本的なセキュリティ機能を初期化
+   */
+  public static function init(): void
+  {
+    // セキュリティヘッダー
+    add_action('send_headers', [self::class, 'send_security_headers']);
 
-    /**
-     * セキュリティヘッダーを送信
-     */
-    public static function send_security_headers(): void
-    {
-        if (!is_admin() && !headers_sent()) {
-            header('X-Frame-Options: SAMEORIGIN');
-            header('X-Content-Type-Options: nosniff');
-            header('X-XSS-Protection: 1; mode=block');
-            header('Referrer-Policy: strict-origin-when-cross-origin');
-            header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-        }
-    }
+    // 基本的なWordPress機能の無効化
+    add_filter('xmlrpc_enabled', '__return_false');
+    add_filter('map_meta_cap', [self::class, 'disable_file_editor'], 10, 2);
 
-    /**
-     * ファイルエディターを無効化
-     *
-     * @param array $caps 権限配列
-     * @param string $cap 権限名
-     * @return array 修正された権限配列
-     */
-    public static function disable_file_editor(array $caps, string $cap): array
-    {
-        if ($cap === 'edit_plugins' || $cap === 'edit_themes') {
-            $caps[] = 'do_not_allow';
-        }
-        return $caps;
-    }
+    // ログインページ保護
+    add_filter('login_errors', [self::class, 'generic_login_error']);
 
-    /**
-     * 汎用ログインエラーメッセージ
-     *
-     * @return string エラーメッセージ
-     */
-    public static function generic_login_error(): string
-    {
-        return esc_html__('ログインに失敗しました。ユーザー名またはパスワードが正しくありません。', 'wp-vite-theme');
-    }
+    // ユーザー列挙攻撃の基本防止
+    add_action('wp', [self::class, 'prevent_user_enumeration']);
+  }
 
-    /**
-     * ユーザー列挙攻撃を防止
-     */
-    public static function prevent_user_enumeration(): void
-    {
-        if (!is_user_logged_in() && isset($_GET['author'])) {
-            $author = sanitize_text_field(wp_unslash($_GET['author']));
-            wp_redirect(home_url());
-            exit;
-        }
+  /**
+   * セキュリティヘッダーを送信
+   */
+  public static function send_security_headers(): void
+  {
+    if (!is_admin() && !headers_sent()) {
+      header('X-Frame-Options: SAMEORIGIN');
+      header('X-Content-Type-Options: nosniff');
+      header('X-XSS-Protection: 1; mode=block');
+      header('Referrer-Policy: strict-origin-when-cross-origin');
+      header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+      // CSP（管理画面はインラインスクリプトを多用するため除外）
+      if (!is_admin()) {
+        header(
+          "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'",
+        );
+      }
     }
+  }
+
+  /**
+   * ファイルエディターを無効化
+   *
+   * @param array $caps 権限配列
+   * @param string $cap 権限名
+   * @return array 修正された権限配列
+   */
+  public static function disable_file_editor(array $caps, string $cap): array
+  {
+    if ($cap === 'edit_plugins' || $cap === 'edit_themes') {
+      $caps[] = 'do_not_allow';
+    }
+    return $caps;
+  }
+
+  /**
+   * 汎用ログインエラーメッセージ
+   *
+   * @return string エラーメッセージ
+   */
+  public static function generic_login_error(): string
+  {
+    return esc_html__(
+      'ログインに失敗しました。ユーザー名またはパスワードが正しくありません。',
+      'wp-vite-theme',
+    );
+  }
+
+  /**
+   * ユーザー列挙攻撃を防止
+   */
+  public static function prevent_user_enumeration(): void
+  {
+    if (!is_user_logged_in() && isset($_GET['author'])) {
+      $author = sanitize_text_field(wp_unslash($_GET['author']));
+      wp_redirect(home_url());
+      exit();
+    }
+  }
 }
 
 // 初期化
